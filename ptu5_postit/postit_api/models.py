@@ -16,7 +16,7 @@ class Post(models.Model):
         related_name='posts',
     )
 
-    created_at = models.DateTimeField(_("created_at"), auto_now=True)
+    created_at = models.DateTimeField(_("created_at"), auto_now_add=True)
 
     def __str__(self) -> str:
         return _("{title} by {user} posted at {created_at}").format(

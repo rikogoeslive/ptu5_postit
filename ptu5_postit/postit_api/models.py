@@ -16,6 +16,7 @@ class Post(models.Model):
         related_name='posts',
     )
 
+    image = models.ImageField(_('image', upload_to='user_images/', blank=True, null=True))
     created_at = models.DateTimeField(_("created_at"), auto_now_add=True)
 
     def __str__(self) -> str:
@@ -54,3 +55,19 @@ class Comment(models.Model):
             created_at=self.created_at,
         )
 
+class Postlike(models.Model):
+    post = models.ForeignKey(
+        Post,
+        verbose_name=_("post"), 
+        on_delete=models.CASCADE,
+        related_name = 'likes',
+        )
+    user = models.ForeignKey(
+        User,
+        verbose_name=("user"),
+        on_delete=models.CASCADE,
+        related_name='post_likes',
+    )
+
+    def __str__(self) -> str:
+        return f"{self.user} likes {self.post}"

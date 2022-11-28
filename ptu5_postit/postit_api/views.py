@@ -1,10 +1,17 @@
+from django.contrib.auth import get_user_model
 from django.shortcuts import render
 from django.utils.translation import gettext_lazy as _
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, mixins, status
 from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
 from . import models, serializers
 
+User = get_user_model()
 
+def home(request):
+    return render(request, 'postit_api/index.html')
+
+    
 class PostList(generics.ListCreateAPIView):
     queryset = models.Post.objects.all()
     serializer_class = serializers.PostSerializer
@@ -67,3 +74,32 @@ class CommentDetail(generics.RetrieveUpdateDestroyAPIView):
         else:
             raise ValidationError(_('You cannot change comment not of your own.'))
         
+
+class PostLikeCreate(generics.CreateAPIView, mixins.DestroyModelMixin):
+    serializer_class = serializers.PostLikeSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        post = models.Post.objects.get(pk=self.kwargs['pk'])
+        return models.Postlike.objects.filter(user=user, post=post)
+
+    def perform_create(self, serializer):
+        if self.get_queryset().exists():
+            raise ValidationError(_('You cannot like a post more than once'))
+        user = self.request.user
+        post = models.Post.objects.get(pk=self.kwargs['pk'])
+        serializer.save(user=user, post=post)
+
+    def delete(self, request, *args, **kwargs):
+        if self.get_queryset().exists():
+            self.get_queryset().delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            raise ValidationError(_('You do note like this post to begin with.'))
+
+
+class UserCreate(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = serializers.UserSerializer
+    permission_classes = [permissions.AllowAny]
